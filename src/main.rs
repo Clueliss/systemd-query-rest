@@ -38,25 +38,24 @@ impl From<std::io::Error> for ProcessError {
 
 
 fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
-
-    let mut p: [i32; 2] = unsafe{ MaybeUninit::uninit().assume_init() };
-    unsafe {
-        libc::pipe(p.as_mut_ptr());
-    }
-
-    cmd.stdout(Stdio::from_raw_fd(p[1]))
-        .stderr(Stdio::from_raw_fd(p[1]));
-
     let status = cmd.status()?;
 
-    let mut output = String::new();
-
     unsafe {
+        let mut p: [i32; 2] = MaybeUninit::uninit().assume_init();
+        libc::pipe(p.as_mut_ptr());
+
+        cmd.stdout(Stdio::from_raw_fd(p[1]))
+            .stderr(Stdio::from_raw_fd(p[1]));
+
+        let mut output = String::new();
+
         File::from_raw_fd(p[0])
             .read_to_string(&mut output)?;
 
         libc::close(p[0]);
         libc::close(p[1]);
+
+        output
     }
 
     if !status.success() {
