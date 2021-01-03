@@ -40,7 +40,7 @@ impl From<std::io::Error> for ProcessError {
 fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
     let status = cmd.status()?;
 
-    unsafe {
+    let output = unsafe {
         let mut p: [i32; 2] = MaybeUninit::uninit().assume_init();
         libc::pipe(p.as_mut_ptr());
 
@@ -56,7 +56,7 @@ fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
         libc::close(p[1]);
 
         output
-    }
+    };
 
     if !status.success() {
         Err(ProcessError::OtherError(output))
