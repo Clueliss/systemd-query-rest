@@ -3,7 +3,7 @@
 #[macro_use] extern crate rocket;
 
 use std::io::Error;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use rocket::Request;
 use rocket::response::Responder;
@@ -35,13 +35,24 @@ impl From<std::io::Error> for ProcessError {
 
 
 fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
+
+    let mut p: [i32; 2];
+    unsafe { libc::pipe(p.as_mut_ptr()); }
+
+    cmd.stdout(Stdio::from_raw_fd(p[1]))
+        .stderr(Stdio::from_raw_fd(p[1]));
+
     let status = cmd.status()?;
-    let output = cmd.output()?;
+
+    let mut output = String::new();
+
+    File::from_raw_fd(p[0])
+        .read_to_string(&mut output)?;
 
     if !status.success() {
-        Err(ProcessError::OtherError(String::from_utf8(output.stderr).unwrap()))
+        Err(ProcessError::OtherError(output))
     } else {
-        Ok(String::from_utf8(output.stdout).unwrap())
+        Ok(output)
     }
 }
 
