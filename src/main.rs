@@ -3,7 +3,7 @@
 #[macro_use] extern crate rocket;
 
 use std::fs::File;
-use std::io::Error;
+use std::io::{Error, Read};
 use std::os::unix::io::FromRawFd;
 use std::process::{Command, Stdio};
 
