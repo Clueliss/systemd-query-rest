@@ -1,0 +1,8 @@
+[Unit]
+Description=provides a http rest api to query systemd state
+
+[Service]
+ExecStart=/usr/local/bin/systemd-query-rest
+
+[Install]
+WantedBy=multi-user.target
