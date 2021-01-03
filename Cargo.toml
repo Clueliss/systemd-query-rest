@@ -1,0 +1,12 @@
+[package]
+name = "systemd-query-rest"
+version = "0.1.0"
+authors = ["Liss Heidrich <31625940+Clueliss@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = "0.4.6"
+serde = { version = "1.0.118", features = ["derive"] }
+serde_json = "1.0.61"
