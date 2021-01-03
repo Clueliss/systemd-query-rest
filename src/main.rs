@@ -49,6 +49,11 @@ fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
     File::from_raw_fd(p[0])
         .read_to_string(&mut output)?;
 
+    unsafe {
+        libc::close(p[0]);
+        libc::close(p[1]);
+    }
+
     if !status.success() {
         Err(ProcessError::OtherError(output))
     } else {
