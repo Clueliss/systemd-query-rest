@@ -4,8 +4,7 @@
 
 use std::fs::File;
 use std::io::{Error, Read};
-use std::os::unix::io::FromRawFd;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 use rocket::Request;
 use rocket::response::Responder;
@@ -39,28 +38,17 @@ impl From<std::io::Error> for ProcessError {
 
 fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
     let status = cmd.status()?;
+    let output = cmd.output()?;
 
-    let output = unsafe {
-        let mut p: [i32; 2] = MaybeUninit::uninit().assume_init();
-        libc::pipe(p.as_mut_ptr());
+    let all_out = format!("{}\n{}",
+        String::from_utf8(output.stdout).unwrap(),
+        String::from_utf8(output.stderr).unwrap());
 
-        cmd.stdout(Stdio::from_raw_fd(p[1]))
-            .stderr(Stdio::from_raw_fd(p[1]));
-
-        let mut output = String::new();
-
-        File::from_raw_fd(p[0])
-            .read_to_string(&mut output)?;
-
-        libc::close(p[1]);
-
-        output
-    };
 
     if !status.success() {
-        Err(ProcessError::OtherError(output))
+        Err(ProcessError::OtherError(all_out))
     } else {
-        Ok(output)
+        Ok(all_out)
     }
 }
 
