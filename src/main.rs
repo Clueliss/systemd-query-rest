@@ -62,7 +62,8 @@ fn get_systemd_status() -> Result<String, ProcessError> {
 fn get_systemd_unit_journal(unit: &str, since: Option<&str>) -> Result<String, ProcessError> {
     let mut cmd = Command::new("journalctl");
 
-    cmd.arg("--unit")
+    cmd.arg("--no-pager")
+        .arg("--unit")
         .arg(unit);
 
     if since.is_some() {
