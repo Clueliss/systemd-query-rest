@@ -9,6 +9,7 @@ use std::process::{Command, Stdio};
 
 use rocket::Request;
 use rocket::response::Responder;
+use std::mem::MaybeUninit;
 
 #[derive(Debug)]
 enum ProcessError {
@@ -38,8 +39,10 @@ impl From<std::io::Error> for ProcessError {
 
 fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
 
-    let mut p: [i32; 2];
-    unsafe { libc::pipe(p.as_mut_ptr()); }
+    let mut p: [i32; 2] = unsafe{ MaybeUninit::uninit().assume_init() };
+    unsafe {
+        libc::pipe(p.as_mut_ptr());
+    }
 
     cmd.stdout(Stdio::from_raw_fd(p[1]))
         .stderr(Stdio::from_raw_fd(p[1]));
@@ -48,10 +51,10 @@ fn command_output(mut cmd: Command) -> Result<String, ProcessError> {
 
     let mut output = String::new();
 
-    File::from_raw_fd(p[0])
-        .read_to_string(&mut output)?;
-
     unsafe {
+        File::from_raw_fd(p[0])
+            .read_to_string(&mut output)?;
+
         libc::close(p[0]);
         libc::close(p[1]);
     }
