@@ -1,14 +1,8 @@
 #![feature(decl_macro, array_methods, proc_macro_hygiene)]
-#![feature(cstring_from_vec_with_nul)]
 
-extern crate libc;
 #[macro_use] extern crate rocket;
 
-use std::ffi::{CStr, OsStr, CString, FromVecWithNulError};
-use std::fs::File;
-use std::io::{Error, Read};
-use std::mem::MaybeUninit;
-use std::os::unix::io::FromRawFd;
+use std::io::Error;
 use std::process::Command;
 
 use rocket::Request;
@@ -36,75 +30,6 @@ impl <'r> Responder<'r> for ProcessError {
 impl From<std::io::Error> for ProcessError {
     fn from(e: Error) -> Self {
         ProcessError::IOError(e)
-    }
-}
-
-fn c_result(ret: libc::c_int) -> Result<libc::c_int, std::io::Error> {
-    if ret < 0 {
-        Err(std::io::Error::last_os_error())
-    } else {
-        Ok(ret)
-    }
-}
-
-fn make_c_string<S>(s: S) -> Result<CString, FromVecWithNulError>
-where
-    S: AsRef<OsStr>
-{
-    let mut buf = Vec::new();
-    let bytes = s.as_ref().to_str().unwrap().as_bytes();
-    buf.resize(bytes.len(), 0);
-    buf.clone_from_slice(bytes);
-    buf.push(0);
-
-    CString::from_vec_with_nul(buf)
-}
-
-
-fn run_command<I, P, A>(prog: P, args: I) -> Result<String, std::io::Error>
-where
-    P: AsRef<OsStr>,
-    A: AsRef<OsStr>,
-    I: IntoIterator<Item=A>
-{
-    unsafe {
-        let mut p: [libc::c_int; 2] = MaybeUninit::uninit().assume_init();
-        c_result(libc::pipe(p.as_mut_ptr()))?;
-        let pid = c_result(libc::fork())?;
-
-        if pid == 0 {
-            // in child
-
-            // close read end
-            libc::close(p[0]);
-            c_result(libc::dup2(p[1], libc::STDOUT_FILENO))?;
-            c_result(libc::dup2(p[1], libc::STDERR_FILENO))?;
-
-            let prog = make_c_string(prog).unwrap();
-            let args = args.into_iter()
-                .map(|arg| make_c_string(arg).unwrap())
-                .collect::<Vec<_>>();
-
-            let a = std::iter::once(prog.as_ptr())
-                .chain(args.iter().map(|arg| arg.as_ptr()))
-                .chain(std::iter::once(std::ptr::null()))
-                .collect::<Vec<_>>();
-
-            c_result(libc::execv(prog.as_ptr(), a.as_ptr()))?;
-            unreachable!();
-        } else {
-            // in parent
-
-            // close write end
-            libc::close(p[1]);
-            c_result(libc::waitpid(pid, std::ptr::null_mut(), 0))?;
-
-            let mut buf = String::new();
-            File::from_raw_fd(p[0])
-                .read_to_string(&mut buf)?;
-
-            Ok(buf)
-        }
     }
 }
 
