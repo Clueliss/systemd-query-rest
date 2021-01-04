@@ -58,7 +58,7 @@ fn get_systemd_unit_status(unit: &str) -> Result<String, ProcessError> {
 fn get_systemd_status() -> Result<String, ProcessError> {
     let mut cmd = Command::new("sh");
     cmd.arg("-c")
-        .arg("systemctl 2>&1");
+        .arg("systemctl --no-pager 2>&1");
 
     command_output(cmd)
 }
