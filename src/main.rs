@@ -125,7 +125,7 @@ fn get_systemd_unit_status(unit: &str) -> Result<String, ProcessError> {
     let mut cmd = Command::new("sh");
 
     cmd.arg("-c")
-        .arg(format!("\"systemctl status '{}' 2>&1\"", unit));
+        .arg(format!("systemctl status '{}' 2>&1", unit));
 
     command_output(cmd)
 }
@@ -133,7 +133,7 @@ fn get_systemd_unit_status(unit: &str) -> Result<String, ProcessError> {
 fn get_systemd_status() -> Result<String, ProcessError> {
     let mut cmd = Command::new("sh");
     cmd.arg("-c")
-        .arg("\"systemctl 2>&1\"");
+        .arg("systemctl 2>&1");
 
     command_output(cmd)
 }
@@ -142,7 +142,7 @@ fn get_systemd_unit_journal(unit: &str, since: Option<&str>) -> Result<String, P
     let mut cmd = Command::new("sh");
 
     cmd.arg("-c")
-        .arg(format!("\"journalctl --no-pager --unit '{}' 2>&1\"", unit));
+        .arg(format!("journalctl --no-pager --unit '{}' 2>&1", unit));
 
     if since.is_some() {
         cmd.args(&["--since", since.unwrap()]);
