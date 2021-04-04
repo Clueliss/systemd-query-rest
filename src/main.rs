@@ -69,8 +69,8 @@ fn get_systemd_unit_journal(unit: &str, since: Option<&str>) -> Result<String, P
     cmd.arg("-c")
         .arg(format!("journalctl --no-pager --unit '{}' 2>&1", unit));
 
-    if since.is_some() {
-        cmd.args(&["--since", since.unwrap()]);
+    if let Some(timepoint) = since {
+        cmd.args(&["--since", timepoint]);
     }
 
     command_output(cmd)
